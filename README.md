@@ -1,0 +1,1 @@
+# seismic-activity-predictor-app
