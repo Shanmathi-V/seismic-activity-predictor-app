@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/FirstFragment">
+
+    <fragment
+        android:id="@+id/FirstFragment"
+        android:name="com.example.lunarnova.FirstFragment"
+        android:label="@string/first_fragment_label"
+        tools:layout="@layout/fragment_first">
+
+        <action
+            android:id="@+id/action_FirstFragment_to_SecondFragment"
+            app:destination="@id/SecondFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/SecondFragment"
+        android:name="com.example.lunarnova.SecondFragment"
+        android:label="@string/second_fragment_label"
+        tools:layout="@layout/fragment_second">
+
+        <action
+            android:id="@+id/action_SecondFragment_to_FirstFragment"
+            app:destination="@id/FirstFragment" />
+        <action
+            android:id="@+id/action_SecondFragment_to_moonFragment"
+            app:destination="@id/moonFragment" />
+        <action
+            android:id="@+id/action_SecondFragment_to_marsFragment"
+            app:destination="@id/marsFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/moonFragment"
+        android:name="com.example.lunarnova.MoonFragment"
+        android:label="fragment_moon"
+        tools:layout="@layout/fragment_moon" />
+    <fragment
+        android:id="@+id/marsFragment"
+        android:name="com.example.lunarnova.MarsFragment"
+        android:label="fragment_mars"
+        tools:layout="@layout/fragment_mars" />
+</navigation>
