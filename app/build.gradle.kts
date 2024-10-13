@@ -58,4 +58,7 @@ dependencies {
     implementation ("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-alpha01")
     implementation("com.googlecode.libphonenumber:libphonenumber:8.12.35")
     implementation ("com.airbnb.android:lottie:3.4.2")
+    implementation("com.squareup.okhttp3:okhttp:4.9.3") // Or latest stable version
+    implementation("com.github.kittinunf.fuel:fuel:2.3.1") // Check for the latest version
+
 }

@@ -2,24 +2,24 @@ package com.example.lunarnova
 
 import android.app.Activity
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
-import android.util.Base64
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.transition.TransitionInflater
+import com.github.kittinunf.fuel.Fuel
+import com.github.kittinunf.fuel.core.FileDataPart
 import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -43,16 +43,15 @@ class MarsFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_mars, container, false)
 
+        val buttonSelectCsv: Button = view.findViewById(R.id.selectCsvButton)
         val buttonUploadCsv: Button = view.findViewById(R.id.uploadCsvButton)
         val textViewFileName: TextView = view.findViewById(R.id.fileNameText)
-        val predictedEventsTextView: TextView = view.findViewById(R.id.predictedEventsTextView)
-        val plotImageView: ImageView = view.findViewById(R.id.plotImageView)
 
-        buttonUploadCsv.setOnClickListener {
+        buttonSelectCsv.setOnClickListener {
             selectFile()
         }
 
-        view.findViewById<Button>(R.id.uploadCsvButton).setOnClickListener {
+        buttonUploadCsv.setOnClickListener {
             fileUri?.let {
                 uploadFile(it)
             } ?: Toast.makeText(requireContext(), "Please select a file first", Toast.LENGTH_SHORT).show()
@@ -63,9 +62,11 @@ class MarsFragment : Fragment() {
 
     private fun selectFile() {
         val intent = Intent(Intent.ACTION_GET_CONTENT)
-        intent.type = "text/csv"
+        intent.type = "*/*"  // "*/*" Allows all file types
+        intent.addCategory(Intent.CATEGORY_OPENABLE)
         startActivityForResult(intent, PICK_FILE_REQUEST)
     }
+
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -85,44 +86,66 @@ class MarsFragment : Fragment() {
             val outputStream = FileOutputStream(file)
             inputStream?.copyTo(outputStream)
 
-            val requestFile = RequestBody.create(MediaType.parse("text/csv"), file)
+            // Read a snippet of file content to log
+            val fileContentSnippet = file.readText().take(100) // Logs only the first 500 characters
+            Log.e("uploadFile", "Request File Content Snippet:\n$fileContentSnippet")
+
+            //Fuel
+//            Fuel.upload("https://nasa-api-seismic-waves.onrender.com/predict-seismic-events/")
+//                .add(FileDataPart(file,filename = file.name, contentType = "text/csv")) // Add your CSV file
+//                .timeout(120_000) // Set timeout to 120 seconds
+//                .response { _, _, result ->
+//                    result.fold(
+//                        { data -> Log.d("UploadFile", "Success: $data") },
+//                        { error -> Log.e("UploadFile", "Error: ${error.message}") }
+//                    )
+//                }
+
+
+            //temp commented BEGIN
+
+//            val requestFile = RequestBody.create(MediaType.parse("text/csv"), file)
+            val requestFile = file.asRequestBody("text/csv".toMediaTypeOrNull()) //changed
+
             val multipartBody = MultipartBody.Part.createFormData("file", file.name, requestFile)
+
+            // Log request details
+            Log.e("uploadFile", "Request File Name: ${file.name}")
+            Log.e("uploadFile", "Request File Size: ${file.length()} bytes")
+            Log.e("UploadFile", "MultipartBody: ${multipartBody.body.contentLength()} bytes, contentType: ${multipartBody.body.contentType()}")
+
 
             val call = RetrofitClient.apiService.uploadFile(multipartBody)
             call.enqueue(object : Callback<SeismicResponse> {
                 override fun onResponse(call: Call<SeismicResponse>, response: Response<SeismicResponse>) {
+
                     if (response.isSuccessful) {
                         response.body()?.let {
                             // Handle the response data here
-                            val encodedPlot = it.plot // Base64 encoded string
-                            val predictedSeismicEvents = it.predicted_seismic_events
 
-                            // Decode the Base64 string to Bitmap
-                            val decodedBytes = Base64.decode(encodedPlot, Base64.DEFAULT)
-                            val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-
-                            // Display the predicted seismic events
-                            val predictedEventsTextView: TextView = view?.findViewById(R.id.predictedEventsTextView)!!
-                            predictedEventsTextView.text = "Predicted Seismic Events: $predictedSeismicEvents"
-
-                            // Display the decoded image in an ImageView
-                            val plotImageView: ImageView = view?.findViewById(R.id.plotImageView)!!
-                            plotImageView.setImageBitmap(bitmap)
+                            Toast.makeText(requireContext(), "Success", Toast.LENGTH_LONG).show()
+                            Log.e("uploadFile","onresponse success: ${response.body()}")
                         }
                     } else {
-                        Toast.makeText(requireContext(), "Upload failed: ${response.errorBody()?.string()}", Toast.LENGTH_LONG).show()
+                        val errorBody = response.errorBody()?.string()
+                        Toast.makeText(requireContext(), "Upload failed : response not successful- ${errorBody}", Toast.LENGTH_LONG).show()
+                        Log.e("uploadFile","onresponse not success $errorBody")
                     }
                 }
 
                 override fun onFailure(call: Call<SeismicResponse>, t: Throwable) {
                     Toast.makeText(requireContext(), "Error: ${t.message}", Toast.LENGTH_LONG).show()
-                    Log.e("MarsFragment", "Upload failed", t)
+                    Log.e("uploadFile", "onfailure"+ t.localizedMessage)
+                    // Log detailed stack trace
+                    Log.e("uploadFile", "onfailure Error: ${t.message}")
+                    Log.e("uploadFile", "onfailure Stack Trace: ${t.stackTraceToString()}")
                 }
             })
+            // temp commented END
 
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "Error reading file: ${e.message}", Toast.LENGTH_LONG).show()
-            Log.e("MarsFragment", "File read failed", e)
+            Log.e("onresponse", "File read failed : exception" + e.message)
         }
     }
 }
