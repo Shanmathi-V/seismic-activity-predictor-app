@@ -2,13 +2,16 @@ package com.example.lunarnova
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.util.Base64
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -125,6 +128,31 @@ class MarsFragment : Fragment() {
 
                             Toast.makeText(requireContext(), "Success", Toast.LENGTH_LONG).show()
                             Log.e("uploadFile","onresponse success: ${response.body()}")
+
+                            // Handle the response data here
+                            val encodedPlot = it.plot // Base64 encoded string
+                            val predictedSeismicEvents = it.predicted_seismic_events
+                            val encodedSpectrogram = it.spectrogram
+
+                            // Decode the Base64 string to Bitmap - plot
+                            val decodedBytesPlot = Base64.decode(encodedPlot, Base64.DEFAULT)
+                            val bitmapPlot = BitmapFactory.decodeByteArray(decodedBytesPlot, 0, decodedBytesPlot.size)
+
+                            // Decode the Base64 string to Bitmap - spectrogram
+                            val decodedBytesSpectrogram = Base64.decode(encodedSpectrogram, Base64.DEFAULT)
+                            val bitmapSpectrogram = BitmapFactory.decodeByteArray(decodedBytesSpectrogram, 0, decodedBytesSpectrogram.size)
+
+                            // Display the predicted seismic events
+                            val predictedEventsTextView: TextView = view?.findViewById(R.id.predictedEventsTextView)!!
+                            predictedEventsTextView.text = "Predicted Seismic Events: $predictedSeismicEvents"
+
+                            // Display the decoded image in an ImageView
+                            val plotImageView: ImageView = view?.findViewById(R.id.plotImageView)!!
+                            plotImageView.setImageBitmap(bitmapPlot)
+
+                            // Display the decoded image in an ImageView
+                            val spectrogramImageView: ImageView = view?.findViewById(R.id.spectrogramImageView)!!
+                            spectrogramImageView.setImageBitmap(bitmapSpectrogram)
                         }
                     } else {
                         val errorBody = response.errorBody()?.string()
